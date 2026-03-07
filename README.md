@@ -158,7 +158,7 @@ educativo.
 
 ## Autor
 
-**Andrés**\
+**Equipo FrontEnd De Practicantes UCaldas 2026-1**\
 Desarrollador del proyecto Memorial de Víctimas del Conflicto Armado en
 Caldas.
 
