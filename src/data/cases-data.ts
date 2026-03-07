@@ -1,0 +1,43 @@
+import type { CaseRecord } from "@/types/case";
+
+export const initialCases: CaseRecord[] = [
+  {
+    id: "1",
+    trackingCode: "MEM-1741264123000-A8X9P2Q",
+    reporter: "Carolina Pérez",
+    email: "carolina.p@email.com",
+    municipality: "Samaná",
+    relationship: "Familiar",
+    victimName: "Caso reservado",
+    details: "Información suministrada por la comunidad.",
+    reportDate: "2025-02-28",
+    status: "Pendiente",
+    priority: "Alta",
+  },
+  {
+    id: "2",
+    trackingCode: "MEM-1741264223000-B3M7K1R",
+    reporter: "Luis Hernández",
+    email: "luis.h@email.com",
+    municipality: "Victoria",
+    relationship: "Testigo",
+    victimName: "Caso reservado",
+    details: "Reporte enviado para validación.",
+    reportDate: "2025-03-01",
+    status: "En Revisión",
+    priority: "Media",
+  },
+  {
+    id: "3",
+    trackingCode: "MEM-1741264323000-C9N4T6V",
+    reporter: "Sandra Ramírez",
+    email: "sandra.r@email.com",
+    municipality: "Samaná",
+    relationship: "Vecino/a",
+    victimName: "Caso reservado",
+    details: "Reporte con datos preliminares.",
+    reportDate: "2025-03-03",
+    status: "Pendiente",
+    priority: "Alta",
+  },
+];
