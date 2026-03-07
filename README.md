@@ -1,11 +1,25 @@
+# memorial-victimas-caldas
 
-  # Web Experience for Memory Platform
+Plataforma web conmemorativa para honrar y preservar la memoria de las víctimas en Caldas. Incluye portal público y panel administrativo para gestión de casos.
 
-  This is a code bundle for Web Experience for Memory Platform. The original project is available at https://www.figma.com/design/jdNofvTWo1OqPB2swZPOOx/Web-Experience-for-Memory-Platform.
+Basado en un diseño inicial de Figma para la experiencia web de memoria histórica.
 
-  ## Running the code
+## Ejecutar el proyecto
 
-  Run `npm i` to install the dependencies.
+1. Instalar dependencias:
 
-  Run `npm run dev` to start the development server.
-  
+```bash
+npm install
+```
+
+2. Ejecutar en desarrollo:
+
+```bash
+npm run dev
+```
+
+3. Generar build de producción:
+
+```bash
+npm run build
+```
