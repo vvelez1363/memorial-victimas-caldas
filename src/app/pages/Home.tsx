@@ -1,3 +1,5 @@
+// src/app/pages/Home.tsx
+
 import { Link } from "react-router";
 import { motion } from "motion/react";
 import {
@@ -6,7 +8,6 @@ import {
   Calendar,
   MessageSquare,
   ArrowRight,
-  Heart,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -18,31 +19,30 @@ import {
   mockEvents,
   memoryStats,
 } from "../data/mock-data";
+import { MapPreview } from "../components/maps/MapPreview";
+import { useMemoryPlaces } from "../context/MemoryPlacesContext";
 
 export function Home() {
   const featuredVictims = mockVictims.slice(0, 3);
   const upcomingEvents = mockEvents.slice(0, 3);
+  const { places } = useMemoryPlaces();
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
         <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1700748876498-d8c841684f69?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb3VudGFpbnMlMjBkcmFtYXRpYyUyMGxhbmRzY2FwZSUyMGNpbmVtYXRpYyUyMHN1bnJpc2UlMjBjb2xvbWJpYSUyMG5hdHVyZSUyMGJlYXV0aWZ1bHxlbnwxfHx8fDE3NzI4MDcxODR8MA&ixlib=rb-4.1.0&q=80&w=1080"
             alt="Paisaje cinematográfico de Samaná, Caldas"
             className="w-full h-full object-cover"
           />
-          {/* Natural overlay with mountain green and earth tones */}
           <div className="absolute inset-0 bg-gradient-to-b from-[#2E4739]/40 via-transparent to-[#254032]/60" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#5a6d5e]/20 via-transparent to-[#B2916F]/15" />
         </div>
 
-        {/* Particle Effect - Golden Light */}
         <ParticleEffect />
 
-        {/* Hero Content */}
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -52,21 +52,18 @@ export function Home() {
             <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl text-white mb-8 leading-tight drop-shadow-2xl">
               Santuarios de la Memoria
             </h1>
-
             <p className="text-xl sm:text-2xl text-white/95 mb-12 max-w-4xl mx-auto leading-relaxed drop-shadow-lg">
               Diálogos para la verdad y la reparación simbólica
               <br className="hidden sm:block" />
               de las víctimas de desaparición en Samaná, Caldas
             </p>
-
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Link to="/victimas">
                 <Button
                   size="lg"
                   className="bg-[#C9A227] text-white hover:bg-[#b89020] text-lg px-10 py-7 shadow-2xl hover:shadow-[#C9A227]/50 transition-all"
                 >
-                  Conocer las Historias
-                  <ArrowRight className="ml-2 w-5 h-5" />
+                  Conocer las Historias <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
               <Link to="/santuario">
@@ -82,7 +79,6 @@ export function Home() {
           </motion.div>
         </div>
 
-        {/* Scroll Indicator */}
         <motion.div
           className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
           animate={{ y: [0, 10, 0] }}
@@ -94,7 +90,7 @@ export function Home() {
         </motion.div>
       </section>
 
-      {/* Stats Section */}
+      {/* Stats */}
       <section className="py-16 bg-gradient-to-b from-[#F6F3ED] to-[#e8e5da]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -109,8 +105,7 @@ export function Home() {
                 {memoryStats.victimsRegistered}
               </div>
               <div className="text-[#6b6b5b] flex items-center justify-center gap-2">
-                <Users className="w-4 h-4" />
-                Víctimas Registradas
+                <Users className="w-4 h-4" /> Víctimas Registradas
               </div>
             </motion.div>
             <motion.div
@@ -124,8 +119,7 @@ export function Home() {
                 {memoryStats.testimonies}
               </div>
               <div className="text-[#6b6b5b] flex items-center justify-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                Testimonios
+                <MessageSquare className="w-4 h-4" /> Testimonios
               </div>
             </motion.div>
             <motion.div
@@ -136,11 +130,10 @@ export function Home() {
               transition={{ delay: 0.3 }}
             >
               <div className="text-5xl font-display text-[#2E4739] mb-2">
-                {memoryStats.memoryPlaces}
+                {places.length}
               </div>
               <div className="text-[#6b6b5b] flex items-center justify-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Lugares de Memoria
+                <MapPin className="w-4 h-4" /> Lugares de Memoria
               </div>
             </motion.div>
             <motion.div
@@ -154,15 +147,14 @@ export function Home() {
                 {memoryStats.events}
               </div>
               <div className="text-[#6b6b5b] flex items-center justify-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Eventos
+                <Calendar className="w-4 h-4" /> Eventos
               </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* About Section */}
+      {/* About */}
       <section className="py-20 bg-[#FFFDF8]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -188,7 +180,7 @@ export function Home() {
               </p>
               <Link to="/santuario">
                 <Button className="bg-[#5a6d5e] text-white hover:bg-[#4a5d4e] shadow-md">
-                  Explorar el Santuario Digital
+                  Explorar el Santuario Digital{" "}
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
@@ -223,7 +215,6 @@ export function Home() {
               sueños, legado y esperanza.
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {featuredVictims.map((victim, index) => (
               <motion.div
@@ -237,7 +228,6 @@ export function Home() {
               </motion.div>
             ))}
           </div>
-
           <div className="text-center">
             <Link to="/victimas">
               <Button
@@ -245,8 +235,7 @@ export function Home() {
                 size="lg"
                 className="border-[#2E4739] text-[#2E4739] hover:bg-[#2E4739] hover:text-white"
               >
-                Ver todas las víctimas
-                <ArrowRight className="ml-2 w-4 h-4" />
+                Ver todas las víctimas <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
           </div>
@@ -264,7 +253,6 @@ export function Home() {
               Las voces de quienes mantienen viva la memoria y la esperanza
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             {mockTestimonies.map((testimony, index) => (
               <motion.div
@@ -295,14 +283,13 @@ export function Home() {
               </motion.div>
             ))}
           </div>
-
           <div className="text-center">
             <Link to="/testimonios">
               <Button
                 size="lg"
                 className="bg-[#B2916F] text-white hover:bg-[#9a7d5f]"
               >
-                Ver todos los testimonios
+                Ver todos los testimonios{" "}
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
@@ -330,25 +317,25 @@ export function Home() {
               </p>
               <Link to="/mapa">
                 <Button className="bg-[#7A8B6F] text-white hover:bg-[#6a7a5f]">
-                  Explorar mapa interactivo
-                  <MapPin className="ml-2 w-4 h-4" />
+                  Explorar mapa interactivo <MapPin className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
             </motion.div>
+
+            {/* ✅ isolation: isolate encierra los z-index de Leaflet */}
             <motion.div
-              className="relative h-96 rounded-lg overflow-hidden shadow-2xl bg-[#D4D9C5]"
+              className="relative h-96 rounded-lg overflow-hidden shadow-2xl"
+              style={{ isolation: "isolate", zIndex: 0 }}
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
             >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <MapPin className="w-20 h-20 text-[#4A5D3F]" />
-              </div>
-              <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg">
+              <MapPreview />
+              <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow">
                 <p className="text-sm text-[#4A5D3F]">
-                  <strong>12 lugares de memoria</strong> documentados en Samaná,
-                  Caldas
+                  <strong>{places.length} lugares de memoria</strong>{" "}
+                  documentados en Samaná, Caldas
                 </p>
               </div>
             </motion.div>
@@ -367,7 +354,6 @@ export function Home() {
               Espacios de encuentro, conmemoración y diálogo
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             {upcomingEvents.map((event, index) => (
               <motion.div
@@ -400,7 +386,6 @@ export function Home() {
               </motion.div>
             ))}
           </div>
-
           <div className="text-center">
             <Link to="/eventos">
               <Button
@@ -408,15 +393,14 @@ export function Home() {
                 size="lg"
                 className="border-[#2E4739] text-[#2E4739] hover:bg-[#2E4739] hover:text-white"
               >
-                Ver agenda completa
-                <ArrowRight className="ml-2 w-4 h-4" />
+                Ver agenda completa <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="py-20 bg-gradient-to-br from-[#2E4739] to-[#3d5a49]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
@@ -437,8 +421,7 @@ export function Home() {
                 size="lg"
                 className="bg-[#B2916F] text-white hover:bg-[#9a7d5f] text-lg px-8 py-6 shadow-2xl hover:shadow-[#B2916F]/50 transition-all"
               >
-                Login
-                <ArrowRight className="ml-2 w-5 h-5" />
+                Login <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
           </motion.div>
