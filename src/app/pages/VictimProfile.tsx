@@ -1,3 +1,5 @@
+// src/app/pages/VictimProfile.tsx
+
 import { useParams, Link } from "react-router";
 import { motion } from "motion/react";
 import {
@@ -12,6 +14,7 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { mockVictims } from "../data/mock-data";
+import { VictimMap } from "../components/maps/VictimMap";
 
 export function VictimProfile() {
   const { id } = useParams();
@@ -113,11 +116,7 @@ export function VictimProfile() {
                     <span className="text-white">
                       {new Date(victim.dateOfDisappearance).toLocaleDateString(
                         "es-CO",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        },
+                        { year: "numeric", month: "long", day: "numeric" },
                       )}
                     </span>
                   </div>
@@ -218,30 +217,23 @@ export function VictimProfile() {
 
       {/* Location Map */}
       {victim.location && (
-        <section className="py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-16 bg-[#faf5ec]">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="font-display text-3xl text-[#1a1a1a] mb-8">
-                Lugar de Desaparición
-              </h2>
-              <Card className="p-6 bg-white shadow-lg">
-                <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="w-16 h-16 text-[#2d4a5c] mx-auto mb-4" />
-                    <p className="text-gray-600">
-                      Coordenadas: {victim.location.lat}, {victim.location.lng}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {victim.municipality}, Caldas
-                    </p>
-                  </div>
-                </div>
-              </Card>
+              <div className="mb-6">
+                <h2 className="font-display text-3xl text-[#3a2e22] mb-1">
+                  Lugar de Desaparición
+                </h2>
+                <p className="text-sm text-[#9a8a75]">
+                  Ubicación aproximada del último avistamiento registrado
+                </p>
+              </div>
+              <VictimMap victim={victim} />
             </motion.div>
           </div>
         </section>

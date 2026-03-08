@@ -1,5 +1,3 @@
-// src/app/pages/Home.tsx
-
 import { Link } from "react-router";
 import { motion } from "motion/react";
 import {

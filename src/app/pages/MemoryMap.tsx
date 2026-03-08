@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Search,
   Landmark,
+  Calendar,
 } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -111,11 +112,21 @@ function FitBounds() {
   return null;
 }
 
+// Tipo unificado para víctimas (mock + locales)
+interface AnyVictim {
+  id: string;
+  name: string;
+  dateOfDisappearance: string;
+  photo?: string;
+}
+
 function MarkerPopup({
   place,
+  allVictims,
   onClose,
 }: {
   place: ReturnType<typeof useMemoryPlaces>["places"][0];
+  allVictims: AnyVictim[];
   onClose: () => void;
 }) {
   const map = useMap();
@@ -140,7 +151,7 @@ function MarkerPopup({
 
   const mapSize = map.getSize();
   const popupW = 300;
-  const popupH = 260;
+  const popupH = 280;
   const offset = 18;
   const goRight = pos.x + popupW + offset < mapSize.x;
   const left = goRight ? pos.x + offset : pos.x - popupW - offset;
@@ -149,6 +160,12 @@ function MarkerPopup({
 
   const cfg = typeConfig[place.type];
   const victims = place.victims ?? [];
+
+  // Buscar la primera víctima vinculada (para mostrar fecha en desapariciones)
+  const linkedVictim =
+    place.type === "disappearance" && victims.length > 0
+      ? allVictims.find((v) => victims.includes(v.id))
+      : null;
 
   return createPortal(
     <motion.div
@@ -178,9 +195,24 @@ function MarkerPopup({
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Fecha de desaparición (solo tipo disappearance) */}
+        {linkedVictim && (
+          <div className="flex items-center gap-1.5 mb-2 text-xs text-gray-500">
+            <Calendar className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+            <span>
+              {new Date(linkedVictim.dateOfDisappearance).toLocaleDateString(
+                "es-CO",
+                { day: "numeric", month: "long", year: "numeric" },
+              )}
+            </span>
+          </div>
+        )}
+
         <p className="text-gray-700 text-sm leading-relaxed mb-3">
           {place.description}
         </p>
+
         {victims.length > 0 && (
           <div className="border-t pt-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -188,17 +220,23 @@ function MarkerPopup({
             </p>
             <div className="space-y-1.5">
               {victims.slice(0, 3).map((victimId) => {
-                const victim = mockVictims.find((v) => v.id === victimId);
+                const victim = allVictims.find((v) => v.id === victimId);
                 return victim ? (
                   <div
                     key={victimId}
                     className="flex items-center gap-2 text-sm"
                   >
-                    <img
-                      src={victim.photo}
-                      alt={victim.name}
-                      className="w-7 h-7 rounded-full object-cover ring-2 ring-white shadow"
-                    />
+                    {victim.photo ? (
+                      <img
+                        src={victim.photo}
+                        alt={victim.name}
+                        className="w-7 h-7 rounded-full object-cover ring-2 ring-white shadow"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center ring-2 ring-white shadow text-gray-400 text-xs font-bold flex-shrink-0">
+                        {victim.name.charAt(0)}
+                      </div>
+                    )}
                     <span className="text-gray-800">{victim.name}</span>
                   </div>
                 ) : null;
@@ -218,7 +256,7 @@ function MarkerPopup({
 }
 
 export function MemoryMap() {
-  const { places } = useMemoryPlaces();
+  const { places, localVictims } = useMemoryPlaces();
   const [selectedPlace, setSelectedPlace] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [flyTarget, setFlyTarget] = useState<{
@@ -233,6 +271,9 @@ export function MemoryMap() {
   const selectedPlaceData = selectedPlace
     ? places.find((p) => p.id === selectedPlace)
     : null;
+
+  // Unificar víctimas del mock con las creadas localmente en sesión
+  const allVictims: AnyVictim[] = [...mockVictims, ...localVictims];
 
   const handleSelectPlace = (place: (typeof places)[0]) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
@@ -415,6 +456,7 @@ export function MemoryMap() {
                     {selectedPlaceData && (
                       <MarkerPopup
                         place={selectedPlaceData}
+                        allVictims={allVictims}
                         onClose={handleClose}
                       />
                     )}
