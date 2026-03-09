@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { mockVictims } from "../data/mock-data";
 import { useMemoryPlaces } from "../context/MemoryPlacesContext";
 import {
   MapContainer,
@@ -256,7 +255,7 @@ function MarkerPopup({
 }
 
 export function MemoryMap() {
-  const { places, localVictims } = useMemoryPlaces();
+  const { places, allVictimsForMap } = useMemoryPlaces();
   const [selectedPlace, setSelectedPlace] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [flyTarget, setFlyTarget] = useState<{
@@ -273,8 +272,7 @@ export function MemoryMap() {
     : null;
 
   // Unificar víctimas del mock con las creadas localmente en sesión
-  const allVictims: AnyVictim[] = [...mockVictims, ...localVictims];
-
+  const allVictims: AnyVictim[] = allVictimsForMap;
   const handleSelectPlace = (place: (typeof places)[0]) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     setSelectedPlace(place.id);

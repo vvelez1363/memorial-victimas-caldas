@@ -1,5 +1,4 @@
 // src/app/components/maps/AdminMemoryMap.tsx
-
 import { useState, useEffect } from "react";
 import {
   MapContainer,
@@ -17,11 +16,10 @@ import {
   Check,
   User,
   Navigation,
-  UserPlus,
+  Search,
   AlertCircle,
 } from "lucide-react";
 import { useMemoryPlaces } from "@/app/context/MemoryPlacesContext";
-import { mockVictims } from "@/app/data/mock-data";
 import type { MemoryPlace } from "@/app/data/mock-data";
 import samanaData from "@/app/data/samana.json";
 
@@ -36,11 +34,7 @@ L.Icon.Default.mergeOptions({
 const createCustomIcon = (color: string, size = 32) =>
   L.divIcon({
     className: "",
-    html: `<div style="
-      width:${size}px;height:${size}px;background:${color};
-      border-radius:50% 50% 50% 0;transform:rotate(-45deg);
-      border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);
-    "></div>`,
+    html: `<div style="width:${size}px;height:${size}px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);"></div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
   });
@@ -61,23 +55,9 @@ const samanaStyle = {
   dashArray: "6 4",
 };
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
-
-interface NewVictimForm {
-  name: string;
-  dateOfDisappearance: string;
-  photo: string;
-}
-
 type CoordMode = "map" | "manual";
 
-const EMPTY_NEW_VICTIM: NewVictimForm = {
-  name: "",
-  dateOfDisappearance: "",
-  photo: "",
-};
-
-// ─── Subcomponentes del mapa ──────────────────────────────────────────────────
+// ── Subcomponentes del mapa ───────────────────────────────────────────────────
 
 function FitBounds() {
   const map = useMap();
@@ -116,11 +96,10 @@ function FlyToPoint({ point }: { point: { lat: number; lng: number } | null }) {
   return null;
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
+// ── Componente principal ──────────────────────────────────────────────────────
 
 export function AdminMemoryMap() {
-  const { places, addPlace, removePlace, localVictims, addLocalVictim } =
-    useMemoryPlaces();
+  const { places, addPlace, removePlace, allVictimsForMap } = useMemoryPlaces();
 
   const [addingMode, setAddingMode] = useState(false);
   const [coordMode, setCoordMode] = useState<CoordMode>("map");
@@ -144,11 +123,15 @@ export function AdminMemoryMap() {
     victims: string[];
   }>({ name: "", type: "memorial", description: "", victims: [] });
 
-  // Formulario de nueva víctima (solo activo cuando type === "disappearance")
-  const [newVictim, setNewVictim] = useState<NewVictimForm>(EMPTY_NEW_VICTIM);
-  const [newVictimErrors, setNewVictimErrors] = useState<
-    Partial<Record<keyof NewVictimForm, string>>
-  >({});
+  // ── Búsqueda de víctimas para tipo "disappearance" ────────────────────────
+  const [victimSearch, setVictimSearch] = useState("");
+  const [selectedVictim, setSelectedVictim] = useState<string | null>(null); // id
+
+  const filteredVictims = allVictimsForMap.filter(
+    (v) =>
+      !victimSearch ||
+      v.name.toLowerCase().includes(victimSearch.toLowerCase()),
+  );
 
   const [successMsg, setSuccessMsg] = useState(false);
 
@@ -186,7 +169,7 @@ export function AdminMemoryMap() {
     setShowForm(true);
   };
 
-  // ── Víctimas existentes (encuentro/memorial) ───────────────────────────────
+  // ── Víctimas (encuentro/memorial) ──────────────────────────────────────────
 
   const toggleVictim = (victimId: string) =>
     setForm((f) => ({
@@ -196,17 +179,6 @@ export function AdminMemoryMap() {
         : [...f.victims, victimId],
     }));
 
-  // ── Validación nueva víctima ───────────────────────────────────────────────
-
-  const validateNewVictim = (): boolean => {
-    const errors: Partial<Record<keyof NewVictimForm, string>> = {};
-    if (!newVictim.name.trim()) errors.name = "El nombre es requerido.";
-    if (!newVictim.dateOfDisappearance)
-      errors.dateOfDisappearance = "La fecha es requerida.";
-    setNewVictimErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
   // ── Guardar ────────────────────────────────────────────────────────────────
 
   const handleSave = () => {
@@ -215,11 +187,8 @@ export function AdminMemoryMap() {
     let victimIds = [...form.victims];
 
     if (form.type === "disappearance") {
-      if (!validateNewVictim()) return;
-
-      // Crear y almacenar la nueva víctima en el contexto
-      const newId = addLocalVictim(newVictim);
-      victimIds = [newId];
+      if (!selectedVictim) return; // debe seleccionar una víctima
+      victimIds = [selectedVictim];
     }
 
     addPlace({
@@ -244,28 +213,19 @@ export function AdminMemoryMap() {
     setManualLat("");
     setManualLng("");
     setCoordError("");
-    setNewVictim(EMPTY_NEW_VICTIM);
-    setNewVictimErrors({});
+    setVictimSearch("");
+    setSelectedVictim(null);
   };
 
   const isSaveDisabled = () => {
     if (!form.name.trim() || !form.description.trim()) return true;
-    if (form.type === "disappearance") {
-      return !newVictim.name.trim() || !newVictim.dateOfDisappearance;
-    }
+    if (form.type === "disappearance") return !selectedVictim;
     return false;
   };
 
-  // Todas las víctimas disponibles: las del mock + las creadas en sesión
-  const allVictims = [
-    ...mockVictims,
-    ...localVictims.map((v) => ({
-      id: v.id,
-      name: v.name,
-      dateOfDisappearance: v.dateOfDisappearance,
-      photo: v.photo,
-    })),
-  ];
+  const selectedVictimData = selectedVictim
+    ? allVictimsForMap.find((v) => v.id === selectedVictim)
+    : null;
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -277,11 +237,7 @@ export function AdminMemoryMap() {
         </p>
         <button
           onClick={() => (addingMode ? resetAll() : setAddingMode(true))}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            addingMode
-              ? "bg-red-100 text-red-600 hover:bg-red-200"
-              : "bg-[#2E4739] text-white hover:bg-[#3d5a49]"
-          }`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${addingMode ? "bg-red-100 text-red-600 hover:bg-red-200" : "bg-[#2E4739] text-white hover:bg-[#3d5a49]"}`}
         >
           <MapPin className="w-4 h-4" />
           {addingMode ? "Cancelar" : "Añadir lugar"}
@@ -294,21 +250,13 @@ export function AdminMemoryMap() {
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
             <button
               onClick={() => setCoordMode("map")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                coordMode === "map"
-                  ? "bg-white text-[#2E4739] shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${coordMode === "map" ? "bg-white text-[#2E4739] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
             >
               <MapPin className="w-3.5 h-3.5" /> Clic en mapa
             </button>
             <button
               onClick={() => setCoordMode("manual")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                coordMode === "manual"
-                  ? "bg-white text-[#2E4739] shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${coordMode === "manual" ? "bg-white text-[#2E4739] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
             >
               <Navigation className="w-3.5 h-3.5" /> Coordenadas manuales
             </button>
@@ -381,11 +329,10 @@ export function AdminMemoryMap() {
         </div>
       )}
 
-      {/* Mensaje de éxito */}
+      {/* Éxito */}
       {successMsg && (
         <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-          <Check className="w-4 h-4" />
-          Lugar y víctima añadidos correctamente.
+          <Check className="w-4 h-4" /> Lugar añadido correctamente.
         </div>
       )}
 
@@ -415,7 +362,6 @@ export function AdminMemoryMap() {
             active={addingMode && coordMode === "map"}
           />
           <FlyToPoint point={flyTarget} />
-
           {places.map((place) => (
             <Marker
               key={place.id}
@@ -430,7 +376,6 @@ export function AdminMemoryMap() {
             />
           )}
         </MapContainer>
-
         {addingMode && coordMode === "map" && !showForm && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-[#2E4739] text-white text-xs px-3 py-1.5 rounded-full shadow pointer-events-none z-50">
             Haz clic en el mapa para colocar el marcador
@@ -537,8 +482,8 @@ export function AdminMemoryMap() {
                     type: e.target.value as MemoryPlace["type"],
                     victims: [],
                   }));
-                  setNewVictim(EMPTY_NEW_VICTIM);
-                  setNewVictimErrors({});
+                  setSelectedVictim(null);
+                  setVictimSearch("");
                 }}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4739]/30"
               >
@@ -564,119 +509,131 @@ export function AdminMemoryMap() {
               />
             </div>
 
-            {/* ── VÍCTIMAS según tipo ── */}
+            {/* ── Víctimas según tipo ── */}
 
             {form.type === "disappearance" ? (
-              /* ── DESAPARICIÓN: solo crear nueva víctima ── */
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <UserPlus className="w-4 h-4 text-[#2E4739]" />
-                  <label className="text-sm font-medium text-gray-700">
-                    Datos de la víctima *
-                  </label>
-                </div>
+              /* ── DESAPARICIÓN: buscar y seleccionar víctima registrada ── */
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Víctima asociada *
+                  <span className="ml-1 text-xs font-normal text-gray-400">
+                    (selecciona una víctima ya registrada)
+                  </span>
+                </label>
 
-                <div className="border border-[#2E4739]/20 rounded-xl p-4 bg-[#f7faf8] space-y-3">
-                  {/* Nombre víctima */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Nombre completo *
-                    </label>
-                    <input
-                      type="text"
-                      value={newVictim.name}
-                      onChange={(e) => {
-                        setNewVictim((v) => ({ ...v, name: e.target.value }));
-                        if (e.target.value.trim())
-                          setNewVictimErrors((er) => ({
-                            ...er,
-                            name: undefined,
-                          }));
-                      }}
-                      placeholder="Ej. María Lucía Torres"
-                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4739]/30 ${
-                        newVictimErrors.name
-                          ? "border-red-300 bg-red-50"
-                          : "border-gray-200"
-                      }`}
-                    />
-                    {newVictimErrors.name && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
-                        <AlertCircle className="w-3 h-3" />{" "}
-                        {newVictimErrors.name}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Fecha desaparición */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Fecha de desaparición *
-                    </label>
-                    <input
-                      type="date"
-                      value={newVictim.dateOfDisappearance}
-                      onChange={(e) => {
-                        setNewVictim((v) => ({
-                          ...v,
-                          dateOfDisappearance: e.target.value,
-                        }));
-                        if (e.target.value)
-                          setNewVictimErrors((er) => ({
-                            ...er,
-                            dateOfDisappearance: undefined,
-                          }));
-                      }}
-                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4739]/30 ${
-                        newVictimErrors.dateOfDisappearance
-                          ? "border-red-300 bg-red-50"
-                          : "border-gray-200"
-                      }`}
-                    />
-                    {newVictimErrors.dateOfDisappearance && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
-                        <AlertCircle className="w-3 h-3" />{" "}
-                        {newVictimErrors.dateOfDisappearance}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Foto (opcional) */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      URL de fotografía{" "}
-                      <span className="font-normal text-gray-400">
-                        (opcional)
-                      </span>
-                    </label>
-                    <input
-                      type="url"
-                      value={newVictim.photo}
-                      onChange={(e) =>
-                        setNewVictim((v) => ({ ...v, photo: e.target.value }))
-                      }
-                      placeholder="https://ejemplo.com/foto.jpg"
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4739]/30"
-                    />
-                    {newVictim.photo && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <img
-                          src={newVictim.photo}
-                          alt="preview"
-                          onError={(e) =>
-                            ((e.target as HTMLImageElement).style.display =
-                              "none")
-                          }
-                          className="w-10 h-10 rounded-full object-cover ring-2 ring-[#2E4739]/20 shadow-sm"
-                        />
-                        <p className="text-xs text-gray-400">Vista previa</p>
+                {/* Víctima seleccionada */}
+                {selectedVictimData ? (
+                  <div className="flex items-center gap-3 p-3 bg-[#2E4739]/5 border border-[#2E4739]/20 rounded-xl">
+                    {selectedVictimData.photo ? (
+                      <img
+                        src={selectedVictimData.photo}
+                        alt={selectedVictimData.name}
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <User className="w-5 h-5 text-gray-400" />
                       </div>
                     )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800">
+                        {selectedVictimData.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Desaparición:{" "}
+                        {new Date(
+                          selectedVictimData.dateOfDisappearance,
+                        ).toLocaleDateString("es-CO", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedVictim(null)}
+                      className="text-gray-300 hover:text-red-400 transition p-1 rounded"
+                      title="Quitar selección"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  /* Buscador */
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={victimSearch}
+                        onChange={(e) => setVictimSearch(e.target.value)}
+                        placeholder="Buscar víctima por nombre..."
+                        className="w-full pl-9 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4739]/30"
+                      />
+                    </div>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-100 max-h-48 overflow-y-auto">
+                      {filteredVictims.length === 0 ? (
+                        <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-400">
+                          <AlertCircle className="w-4 h-4" />
+                          No se encontraron víctimas. Regístralas primero en{" "}
+                          <strong className="text-[#2E4739] ml-1">
+                            Gestión de Víctimas
+                          </strong>
+                          .
+                        </div>
+                      ) : (
+                        filteredVictims.map((victim) => (
+                          <button
+                            key={victim.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedVictim(victim.id);
+                              setVictimSearch("");
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-[#2E4739]/5 transition-colors"
+                          >
+                            {victim.photo ? (
+                              <img
+                                src={victim.photo}
+                                alt={victim.name}
+                                className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-sm"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                <User className="w-4 h-4 text-gray-400" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-800 truncate">
+                                {victim.name}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                Desaparición:{" "}
+                                {new Date(
+                                  victim.dateOfDisappearance,
+                                ).toLocaleDateString("es-CO", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </p>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {!selectedVictim && (
+                  <p className="flex items-center gap-1 text-xs text-amber-600">
+                    <AlertCircle className="w-3 h-3" /> Debes seleccionar una
+                    víctima para guardar este punto.
+                  </p>
+                )}
               </div>
             ) : (
-              /* ── ENCUENTRO / MEMORIAL: seleccionar víctima existente ── */
+              /* ── ENCUENTRO / MEMORIAL: selección múltiple ── */
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Víctimas asociadas{" "}
@@ -685,16 +642,14 @@ export function AdminMemoryMap() {
                   </span>
                 </label>
                 <div className="border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-100 max-h-48 overflow-y-auto">
-                  {allVictims.map((victim) => {
+                  {allVictimsForMap.map((victim) => {
                     const selected = form.victims.includes(victim.id);
                     return (
                       <button
                         key={victim.id}
                         type="button"
                         onClick={() => toggleVictim(victim.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
-                          selected ? "bg-[#2E4739]/5" : "hover:bg-gray-50"
-                        }`}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${selected ? "bg-[#2E4739]/5" : "hover:bg-gray-50"}`}
                       >
                         {victim.photo ? (
                           <img
@@ -703,7 +658,7 @@ export function AdminMemoryMap() {
                             className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-sm"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 ring-2 ring-white shadow-sm">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                             <User className="w-4 h-4 text-gray-400" />
                           </div>
                         )}
@@ -723,11 +678,7 @@ export function AdminMemoryMap() {
                           </p>
                         </div>
                         <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            selected
-                              ? "bg-[#2E4739] border-[#2E4739]"
-                              : "border-gray-300"
-                          }`}
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? "bg-[#2E4739] border-[#2E4739]" : "border-gray-300"}`}
                         >
                           {selected && <Check className="w-3 h-3 text-white" />}
                         </div>
