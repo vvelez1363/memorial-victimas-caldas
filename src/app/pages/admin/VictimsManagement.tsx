@@ -6,42 +6,20 @@ import {
   Trash2,
   Eye,
   Filter,
-  X,
   User,
-  MapPin,
   Calendar,
   Phone,
   FileText,
   Camera,
-  Upload,
   Loader2,
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
 import { useMemoryPlaces } from "@/app/context/MemoryPlacesContext";
 import type { Victim } from "@/app/context/MemoryPlacesContext";
+import { Modal } from "@/app/components/ui/modal";
+import { uploadFile } from "@/services/fileService";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MICROSERVICIO DE ARCHIVOS
-// Cuando tengas la URL real, reemplaza FILE_UPLOAD_URL
-// ─────────────────────────────────────────────────────────────────────────────
-const FILE_UPLOAD_URL = "/api/files/upload"; // ← reemplazar con URL real
-
-async function uploadFile(file: File): Promise<string | null> {
-  const formData = new FormData();
-  formData.append("file", file);
-  // headers: { Authorization: `Bearer ${token}` }, // ← descomentar cuando tengas auth
-
-  const response = await fetch(FILE_UPLOAD_URL, {
-    method: "POST",
-    body: formData,
-  });
-  if (!response.ok)
-    throw new Error(`Error al subir archivo: ${response.status}`);
-
-  const data = await response.json();
-  return data.url ?? data.fileUrl ?? data.path ?? null;
-}
 // ─────────────────────────────────────────────────────────────────────────────
 
 const EMPTY_FORM: Omit<Victim, "id"> = {
@@ -56,96 +34,6 @@ const EMPTY_FORM: Omit<Victim, "id"> = {
   notes: "",
   age: null,
 };
-
-// ── Modal ─────────────────────────────────────────────────────────────────────
-function Modal({
-  open,
-  onClose,
-  title,
-  children,
-  maxWidth = "600px",
-}: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-  maxWidth?: string;
-}) {
-  if (!open) return null;
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "24px",
-      }}
-    >
-      <div
-        onClick={onClose}
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(0,0,0,0.45)",
-          backdropFilter: "blur(2px)",
-        }}
-      />
-      <div
-        style={{
-          position: "relative",
-          background: "#fff",
-          borderRadius: "18px",
-          width: "100%",
-          maxWidth,
-          maxHeight: "90vh",
-          overflowY: "auto",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.25)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "24px 28px 16px",
-            borderBottom: "1px solid rgba(46,71,57,0.10)",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "22px",
-              fontWeight: 800,
-              color: "#111",
-              margin: 0,
-            }}
-          >
-            {title}
-          </h3>
-          <button
-            onClick={onClose}
-            style={{
-              background: "rgba(0,0,0,0.06)",
-              border: "none",
-              borderRadius: "50%",
-              width: 34,
-              height: 34,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-          >
-            <X size={18} color="#555" />
-          </button>
-        </div>
-        <div style={{ padding: "24px 28px 28px" }}>{children}</div>
-      </div>
-    </div>
-  );
-}
 
 // ── Field ─────────────────────────────────────────────────────────────────────
 function Field({
@@ -191,6 +79,8 @@ const selectStyle: React.CSSProperties = {
 };
 
 // ── PhotoUploader ─────────────────────────────────────────────────────────────
+// Solo acepta imágenes — pensado exclusivamente para foto de víctima.
+// Si en otra vista necesitas otros tipos de archivo, crea un uploader distinto.
 function PhotoUploader({
   photoUrl,
   onPhotoChange,
@@ -231,6 +121,7 @@ function PhotoUploader({
       setUploadState("success");
       onPhotoChange(true, url);
     } catch (err) {
+      // Microservicio no disponible aún → guardamos preview local
       console.warn(
         "Microservicio no disponible, guardando localmente:",
         (err as Error).message,
@@ -389,6 +280,7 @@ function PhotoUploader({
         </div>
       )}
 
+      {/* Solo acepta imágenes — para testimonios usa otro uploader */}
       <input
         ref={fileInputRef}
         type="file"
